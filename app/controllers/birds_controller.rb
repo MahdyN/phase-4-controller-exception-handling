@@ -1,5 +1,6 @@
 class BirdsController < ApplicationController
-
+  wrap_parameters format: []
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found_response #Instead of putting a rescue on each of the methods that need it, we can place this here and it will rescue any of the actions from a record not found error by rendering the not found method
   # GET /birds
   def index
     birds = Bird.all
@@ -14,51 +15,46 @@ class BirdsController < ApplicationController
 
   # GET /birds/:id
   def show
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      render json: bird
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    render json: bird
   end
 
   # PATCH /birds/:id
   def update
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      bird.update(bird_params)
-      render json: bird
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    bird.update(bird_params)
+    render json: bird
   end
 
   # PATCH /birds/:id/like
   def increment_likes
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      bird.update(likes: bird.likes + 1)
-      render json: bird
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    bird.update(likes: bird.likes + 1)
+    render json: bird
   end
 
   # DELETE /birds/:id
   def destroy
-    bird = Bird.find_by(id: params[:id])
-    if bird
-      bird.destroy
-      head :no_content
-    else
-      render json: { error: "Bird not found" }, status: :not_found
-    end
+    bird = find_bird
+    bird.destroy
+    head :no_content
   end
 
   private
 
   def bird_params
     params.permit(:name, :species, :likes)
+  end
+
+  #Refactoring error code render
+  def render_not_found_response
+    render json: { error: "Bird not found" }, status: :not_found
+  end
+
+  #Refactoring finding bird by ID
+  def find_bird
+    # Bird.find_by(id: params[:id]) This is good for if/else(returns nil if id doesnt exist) but can be shortened
+    Bird.find(params[:id])
   end
 
 end
